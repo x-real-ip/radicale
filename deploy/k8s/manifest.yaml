@@ -107,7 +107,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: radicale
-          image: "harbor.k8s.lan/k8s/radicale:4"
+          image: "harbor.k8s.lan/k8s/radicale:5"
           resources: {}
           securityContext:
             runAsUser: 1000
