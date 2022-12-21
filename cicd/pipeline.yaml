@@ -35,7 +35,7 @@ steps:
     commands:
       - |
         echo "Build image..."
-        buildah --storage-driver=$${STORAGE_DRIVER} bud --format=$${FORMAT} \
+        buildah --build-arg BUILD_UID=1000 --build-arg BUILD_GID=1000 --storage-driver=$${STORAGE_DRIVER} bud --format=$${FORMAT} \
         --tls-verify=$${TLSVERIFY} -f $${CONTAINERFILE} \
         -t $${REGISTRY_HOST}/$${DRONE_REPO_NAME}:latest \
         -t $${REGISTRY_HOST}/$${DRONE_REPO_NAME}:$${DRONE_BUILD_NUMBER} \
