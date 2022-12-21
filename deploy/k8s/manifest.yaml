@@ -105,7 +105,7 @@ spec:
     spec:
       containers:
         - name: radicale
-          image: "harbor.k8s.lan/k8s/radicale:10"
+          image: "harbor.k8s.lan/k8s/radicale:12"
           resources: {}
           ports:
             - containerPort: 5232
