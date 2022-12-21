@@ -103,12 +103,18 @@ spec:
       labels:
         app: radicale
     spec:
+      securityContext:
+        fsGroup: 1000
       containers:
         - name: radicale
           image: "harbor.k8s.lan/k8s/radicale:14"
           resources: {}
-          command: ["docker-entrypoint.sh"]
+          command: ["/bin/sh", "/usr/local/bin/docker-entrypoint.sh"]
           args: ["radicale", "--config", "/config/config"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 1000
+            runAsGroup: 1000
           ports:
             - containerPort: 5232
               protocol: TCP
@@ -124,6 +130,7 @@ spec:
           configMap:
             name: config
         - name: collections
+          # emptyDir: {}
           persistentVolumeClaim:
             claimName: pvc-nfs-radicale-data
       imagePullSecrets:
