@@ -4,11 +4,6 @@ type: docker
 name: validate
 
 steps:
-  - name: prettier
-    image: tmknom/prettier:latest
-    commands:
-      - prettier --config "./cicd/.prettierrc.yaml" --ignore-path "./cicd/.prettierignore" --check "./src/config/**/*.yaml"
-
   - name: yamllint
     image: sdesbure/yamllint:latest
     commands:
