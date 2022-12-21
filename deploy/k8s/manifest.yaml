@@ -107,6 +107,8 @@ spec:
         - name: radicale
           image: "harbor.k8s.lan/k8s/radicale:12"
           resources: {}
+          command: ["docker-entrypoint.sh"]
+          args: ["radicale", "--config", "/config/config"]
           ports:
             - containerPort: 5232
               protocol: TCP
