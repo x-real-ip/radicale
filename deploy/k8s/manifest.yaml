@@ -1,0 +1,181 @@
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: pv-nfs-radicale-data
+  labels:
+    app: radicale
+spec:
+  storageClassName: "freenas-nfs-manual-csi"
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - nfsvers=4
+    - nolock
+    - noatime
+  csi:
+    driver: org.democratic-csi.node-manual
+    readOnly: false
+    fsType: nfs
+    volumeHandle: pv-nfs-radicale-data
+    volumeAttributes:
+      server: storage-server-lagg.lan
+      share: /mnt/r01_1tb/k8s/radicale-data/
+      node_attach_driver: nfs
+      provisioner_driver: node-manual
+
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-nfs-radicale-data
+  namespace: tools
+  labels:
+    app: radicale
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "freenas-nfs-manual-csi"
+spec:
+  storageClassName: freenas-nfs-manual-csi
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: pv-nfs-radicale-data
+
+---
+kind: SealedSecret
+apiVersion: bitnami.com/v1alpha1
+metadata:
+  name: radical-basic-auth
+  namespace: tools
+spec:
+  encryptedData:
+    auth: AgCgBfjCsDeQKfmp48MHe3w4CqdQ3bsC7fGGFRUa16S5OYkTD/xaJSAbj4832eYXrJIr+u9RcPOM4taFn/XaEbAVEritgIGFkb+QX1Awhm480OKv/EXv5eROo9tLFL+NrLUjdsSxRMy7BiOqWy6gArsqbjjxmz3obh6WWvTW/wyagTiNQYVSsKo4+6qEsGzMSrohGJJFdu7sA6LrYrZlv/iNMdOcW9ZUFbxzlcIb9SmHXNOPKfXTvXPxqzu7l1vyqqEeDQefF7okeF8QiNm8iYOTtmOqajbhYEuPBMARdxPOZ8gdQBjjPdBzYM6d2FTjLa+GU91z64ssSx8CW8JPAm4o1y1oSnO6Lk38Vdyuw2Dwi9A5lhisROI063tqt3PCA1BeoYQkZMHdHzvS0kZNhPSaBXW7QNyz8NYuVNsRY0dfa09+GPs5VUlxki78BmmgkCmzuAInN7wGfy6iU1kYXY8x6/q6aO0rC6FjwcSX+P6Uj29WU3waPlYAQWXn0+8JE3n1Q46IV6KSTX+jH89cQ7a1qjmLI4mBgJrf+MLflmVoNVUEqP7bTnkoO/5EkkWbIR0yvsUFAOq2gErHeHPyixdVenZ9K97tASeJuIAKNvoeZXvbkKRVrHgjnippzdI/SBD72v0rJtepe15hb5XsAs41D7TQFuCp8LWEBIdqqKUICqWF67sXkoK7VOe4EfqbSycwGLCYVsGfHWjdNi8CDeAlexa9xDakAUKnE7lDEd7t4PWMrflQ4znVU9cg5UAWNfzasg==
+  template:
+    metadata:
+      labels:
+        app: radicale
+      name: radicale-basic-auth
+      namespace: tools
+    type: Opaque
+
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: config
+  namespace: tools
+  labels:
+    app: radicale
+data:
+  config: |-
+    [server]
+    hosts = 0.0.0.0:5232
+    [auth]
+    type = http_x_remote_user
+    [storage]
+    filesystem_folder = /data/collections
+    [web]
+    type = none
+    [logging]
+    # Threshold for the logger
+    # Value: debug | info | warning | error | critical
+    level = debug
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radicale
+  namespace: tools
+  labels:
+    app: radicale
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: radicale
+  template:
+    metadata:
+      labels:
+        app: radicale
+    spec:
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: radicale
+          image: "harbor.k8s.lan/k8s/radicale:118"
+          resources: {}
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+          ports:
+            - containerPort: 5232
+              protocol: TCP
+          volumeMounts:
+            - name: collections
+              mountPath: /data/collections
+            - name: config
+              mountPath: /config/config
+              subPath: config
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: config
+        - name: collections
+          persistentVolumeClaim:
+            claimName: pvc-nfs-radicale-data
+      imagePullSecrets:
+        - name: harbor-registry-creds
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: radicale
+  namespace: tools
+  labels:
+    app: radicale
+spec:
+  selector:
+    app: radicale
+  type: ClusterIP
+  ports:
+    - name: dav
+      targetPort: 5232
+      port: 5232
+
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: radicale
+  namespace: tools
+  labels:
+    app: radicale
+  annotations:
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: radicale/radicale-basic-auth
+    nginx.ingress.kubernetes.io/configuration-snippet: |-
+      proxy_set_header X-Remote-User $remote_user;
+spec:
+  ingressClassName: nginx-public
+  rules:
+    - host: radicale.theautomation.nl
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: radicale
+                port:
+                  number: 5232
+  tls:
+    - hosts:
+        - radicale.theautomation.nl
+      secretName: cloudflare-tls
