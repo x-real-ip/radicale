@@ -50,16 +50,16 @@ spec:
 kind: SealedSecret
 apiVersion: bitnami.com/v1alpha1
 metadata:
-  name: radical-basic-auth
+  name: users
   namespace: tools
 spec:
   encryptedData:
-    auth: AgCgBfjCsDeQKfmp48MHe3w4CqdQ3bsC7fGGFRUa16S5OYkTD/xaJSAbj4832eYXrJIr+u9RcPOM4taFn/XaEbAVEritgIGFkb+QX1Awhm480OKv/EXv5eROo9tLFL+NrLUjdsSxRMy7BiOqWy6gArsqbjjxmz3obh6WWvTW/wyagTiNQYVSsKo4+6qEsGzMSrohGJJFdu7sA6LrYrZlv/iNMdOcW9ZUFbxzlcIb9SmHXNOPKfXTvXPxqzu7l1vyqqEeDQefF7okeF8QiNm8iYOTtmOqajbhYEuPBMARdxPOZ8gdQBjjPdBzYM6d2FTjLa+GU91z64ssSx8CW8JPAm4o1y1oSnO6Lk38Vdyuw2Dwi9A5lhisROI063tqt3PCA1BeoYQkZMHdHzvS0kZNhPSaBXW7QNyz8NYuVNsRY0dfa09+GPs5VUlxki78BmmgkCmzuAInN7wGfy6iU1kYXY8x6/q6aO0rC6FjwcSX+P6Uj29WU3waPlYAQWXn0+8JE3n1Q46IV6KSTX+jH89cQ7a1qjmLI4mBgJrf+MLflmVoNVUEqP7bTnkoO/5EkkWbIR0yvsUFAOq2gErHeHPyixdVenZ9K97tASeJuIAKNvoeZXvbkKRVrHgjnippzdI/SBD72v0rJtepe15hb5XsAs41D7TQFuCp8LWEBIdqqKUICqWF67sXkoK7VOe4EfqbSycwGLCYVsGfHWjdNi8CDeAlexa9xDakAUKnE7lDEd7t4PWMrflQ4znVU9cg5UAWNfzasg==
+    users: AgB1tehjWWGRg5y/R17NLNMXZYozBmeMz8E9KHKcndD8bNNKsN+shBDYX2UGdxyW/wYuHsuA2X3rhWE239IhwKEjLeqpluGEcJMRiVzLeySLjP/xcbLfPncQUnWNszT0dBtnDgqPi0fqzcHIQ8Y4tLPldOSyjw6JMrHWoh/iaIKO8cZ6Y+4qYc3u44+wcO5cPdkMkzDEdVI0KY+VzWaF7yEZvLxLZE0bVYhSywmBWjp2TXoc9TtLCXvm7pvQ19OQ1NrFvRLVh/Z54VsMrrtNlgii+RbQKLty1roOr/gVOAY72MdG8VgX6vV72zSmqaRfOcbM36mQc7u2jgWITwhLF2QSnjs2qsjXGs7Enxyfts30/VvobgbzAolD9Y+cROosiG+Eifa2oH54IAOQnWZJi4+yQE3u7Qs6HqJz+vzlwtzKScLw+ZTGPGmSgdEkt9aYwNFpJVM0kVZj+ibXcD5TvO0lgkGzKbMIlkzIEzZ9orf/O8QdW+a/kMQBGnMv85du8DSWhL52Z75RvcJ6e4gt/h6feIfN6dp848CTDDXgRPzDvw+w2xALqb1csV9arWTpWcutY9MQAmmfV1tmEKUE7+0W2HUSii2GjiCdPlSx42omOlaWuw4oLqFTbrVmsUOyCBrFw2q6QGjKJTBdSELFa7BBPwZ6CAk2TRQDuyoAfAMFzAitbcMQWsoPT6Kr97/8xeDcf7WeyIHzzQTfGZPFBWHJtzyrvWLUKW30toQ7I4xGeZNbYrrq19bVngimj1pr+1Nch0ggy0ITesZA18NZH2itSzcgxvzb+tyidSF/1+LTAE8UdSLUGvGW13/ckg1kJlf7kZ8dPc+b1pQnUKn9w+DbFF74ao+JzdV2U6W3Yfw+Tf6npmyTW4UjZDxb9tB3kibZIWhDL/4j5/k1MgYSfibLb3cnrL/eOA8L69psAyihfineD+1M4meP+w7KbFy0jky2Ohm0/QUn4xogOw==
   template:
     metadata:
       labels:
         app: radicale
-      name: radicale-basic-auth
+      name: users
       namespace: tools
     type: Opaque
 
@@ -75,16 +75,23 @@ data:
   config: |-
     [server]
     hosts = 0.0.0.0:5232
-    [auth]
-    type = http_x_remote_user
+
     [storage]
     filesystem_folder = /data/collections
+
     [web]
-    type = none
+    type = internal
+
     [logging]
-    # Threshold for the logger
-    # Value: debug | info | warning | error | critical
-    level = debug
+    level = info
+
+    [auth]
+    type = htpasswd
+    htpasswd_filename = /etc/radicale/users
+    htpasswd_encryption = bcrypt
+    delay = 1
+    realm = Radicale - Password Required
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -125,12 +132,18 @@ spec:
               mountPath: /config/config
               subPath: config
               readOnly: true
+            - name: users
+              mountPath: /etc/radicale/users
+              subPath: users
+              readOnly: true
       volumes:
         - name: config
           configMap:
             name: config
+        - name: users
+          secret:
+            secretName: users
         - name: collections
-          # emptyDir: {}
           persistentVolumeClaim:
             claimName: pvc-nfs-radicale-data
       imagePullSecrets:
@@ -150,6 +163,7 @@ spec:
   type: ClusterIP
   ports:
     - name: dav
+      protocol: TCP
       targetPort: 5232
       port: 5232
 
@@ -162,8 +176,6 @@ metadata:
   labels:
     app: radicale
   annotations:
-    nginx.ingress.kubernetes.io/auth-type: basic
-    nginx.ingress.kubernetes.io/auth-secret: radicale/radicale-basic-auth
     nginx.ingress.kubernetes.io/configuration-snippet: |-
       proxy_set_header X-Remote-User $remote_user;
 spec:
