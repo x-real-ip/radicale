@@ -140,7 +140,6 @@ spec:
           secret:
             secretName: radicale-users
         - name: collections
-          # emptyDir: {}
           persistentVolumeClaim:
             claimName: pvc-nfs-radicale-data
       imagePullSecrets:
