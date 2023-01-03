@@ -190,4 +190,4 @@ spec:
   tls:
     - hosts:
         - radicale.theautomation.nl
-      secretName: cloudflare-tls
+      secretName: tls-wildcard-theautomation-nl
