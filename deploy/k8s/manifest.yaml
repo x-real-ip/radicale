@@ -22,7 +22,7 @@ spec:
     fsType: nfs
     volumeHandle: pv-nfs-radicale-data
     volumeAttributes:
-      server: storage-server-lagg.lan
+      server: storage-server-lagg.lan.theautomation.nl
       share: /mnt/r01_1tb/k8s/radicale-data
       node_attach_driver: nfs
       provisioner_driver: node-manual
@@ -110,7 +110,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: radicale
-          image: "harbor.k8s.lan/k8s/radicale:31"
+          image: "harbor.lan.theautomation.nl/k8s/radicale:31"
           resources: {}
           command: ["/bin/sh", "/usr/local/bin/docker-entrypoint.sh"]
           args: ["radicale", "--config", "/config/config"]
