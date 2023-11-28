@@ -110,7 +110,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: radicale
-          image: "harbor.lan.theautomation.nl/k8s/radicale:31"
+          image: "harbor.lan.theautomation.nl/k8s/radicale:33"
           resources: {}
           command: ["/bin/sh", "/usr/local/bin/docker-entrypoint.sh"]
           args: ["radicale", "--config", "/config/config"]
