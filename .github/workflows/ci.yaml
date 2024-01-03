@@ -1,0 +1,35 @@
+---
+name: Continuous Integration
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  yamllint:
+    name: Yaml lint
+    uses: theautomation/github-actions/.github/workflows/yamllint.yaml@main
+
+  build-and-push-image:
+    name: Build and Push Image
+    needs: [yamllint]
+    uses: theautomation/github-actions/.github/workflows/build-and-push.yaml@main
+    with:
+      publish: true
+
+  dispatch-update-manifest:
+    name: Repository Dispatch to Update Manifest
+    needs: [build-and-push-image]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository Dispatch
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.PAT }}
+          repository: theautomation/gitops
+          event-type: update-manifest
+          client-payload:
+            '{"ref": "${{ github.ref }}", "repository": "${{
+            github.repository}}", "registry": "ghcr.io", "sha": "${{ github.sha
+            }}"}'
