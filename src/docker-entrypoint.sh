@@ -6,7 +6,7 @@ set -e
 if [ -n "$UID" ] || [ -n "$GID" ]; then
     if [ ! "$UID" = "$(id radicale -u)" ] || [ ! "$GID" = "$(id radicale -g)" ]; then
         # Fail on read-only container
-        if grep -e "\s/\s.*\sro[\s,]" /proc/mounts >/dev/null; then
+        if grep -e "\s/\s.*\sro[\s,]" /proc/mounts > /dev/null; then
             echo "You specified custom UID/GID (UID: $UID, GID: $GID)."
             echo "UID/GID can only be changed when not running the container with --read-only."
             echo "Please see the README.md for how to proceed and for explanations."
@@ -29,7 +29,7 @@ if [ "$(id -u)" = "0" ] && [ "$TAKE_FILE_OWNERSHIP" = "true" ]; then
 fi
 
 # Run radicale as the "radicale" user or any other command if provided
-if [ "$(id -u)" = "0" ] && [ "$1" = "radicale" ]; then
+if [ "$(id -u)" = "0" ] && [ "$1" = "/venv/bin/radicale" ]; then
     exec su-exec radicale "$@"
 else
     exec "$@"
