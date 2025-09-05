@@ -4,3 +4,5 @@ FROM docker.io/tomsquest/docker-radicale
 RUN groupmod -g 2000 radicale \
  && usermod -u 1000 -g 2000 radicale \
  && chown -R radicale:radicale /data /config
+
+USER radicale
