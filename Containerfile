@@ -1,9 +1,6 @@
 FROM docker.io/tomsquest/docker-radicale
 
-ARG BUILD_UID=1000
-ARG BUILD_GID=2000
-
-# Change the existing radicale user/group
-RUN groupmod -g ${BUILD_GID} radicale \
- && usermod -u ${BUILD_UID} -g ${BUILD_GID} radicale \
+# Force radicale user/group to 1000:2000
+RUN groupmod -g 2000 radicale \
+ && usermod -u 1000 -g 2000 radicale \
  && chown -R radicale:radicale /data /config
