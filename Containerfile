@@ -1,16 +1,16 @@
-FROM alpine:3.21.3
+FROM alpine:3
 
 ARG COMMIT_ID
 ENV COMMIT_ID=${COMMIT_ID}
 
 ARG VERSION
-ENV VERSION=${VERSION:-3.4.1}
+ENV VERSION=${VERSION:-3.5.5}
 
 ARG BUILD_UID
 ENV BUILD_UID=${BUILD_UID:-1000}
 
 ARG BUILD_GID
-ENV BUILD_GID=${BUILD_GID:-2000}
+ENV BUILD_UID=${BUILD_UID:-1000}
 
 ARG TAKE_FILE_OWNERSHIP
 ENV TAKE_FILE_OWNERSHIP=${TAKE_FILE_OWNERSHIP:-true}
@@ -40,7 +40,7 @@ RUN apk add --no-cache --virtual=build-dependencies \
         python3 \
         py3-pip \
     && python -m venv /venv \
-    && /venv/bin/pip install --no-cache-dir radicale==$VERSION passlib[bcrypt] pytz ldap3 \
+    && /venv/bin/pip install --no-cache-dir radicale==$VERSION passlib[bcrypt] argon2-cffi pytz ldap3 \
     && apk del --purge build-dependencies \
     && addgroup -g $BUILD_GID radicale \
     && adduser -D -s /bin/false -H -u $BUILD_UID -G radicale radicale \
