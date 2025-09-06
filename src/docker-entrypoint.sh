@@ -2,7 +2,8 @@
 
 set -e
 
-# If running as root, keep old UID/GID logic from original image
+# If running as root, keep old UID/GID logic
+if [ "$(id -u)" = "0" ]; then
     # Change uid/gid of radicale if vars specified
     if [ -n "$UID" ] || [ -n "$GID" ]; then
         if [ ! "$UID" = "$(id radicale -u)" ] || [ ! "$GID" = "$(id radicale -g)" ]; then
@@ -32,7 +33,7 @@ set -e
         exec "$@"
     fi
 else
-    # Added by x-real-ip to allow running as non-root user
+    # Not root: running directly as arbitrary UID (e.g. from runAsUser)
     if ! id -un "$(id -u)" >/dev/null 2>&1; then
         echo "radicale:x:$(id -u):$(id -g):Radicale:/nonexistent:/sbin/nologin" >> /etc/passwd
     fi
