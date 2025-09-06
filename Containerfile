@@ -1,5 +1,8 @@
 FROM docker.io/tomsquest/docker-radicale:3.5.5.0
 
-# Add radicale user with correct UID/GID
-RUN echo "radicale:x:1000:2000:Radicale:/nonexistent:/sbin/nologin" >> /etc/passwd \
-    && echo "radicale:x:2000:" >> /etc/group
+ARG BUILD_UID=1000
+ARG BUILD_GID=2000
+
+RUN sed -i "s/^radicale:x:[0-9]*:[0-9]*/radicale:x:${BUILD_UID}:${BUILD_GID}/" /etc/passwd \
+    && sed -i "s/^radicale:x:[0-9]*/radicale:x:${BUILD_GID}/" /etc/group \
+    && chown -R ${BUILD_UID}:${BUILD_GID} /data /config
