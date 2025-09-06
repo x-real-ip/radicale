@@ -53,8 +53,7 @@ HEALTHCHECK --interval=30s --retries=3 CMD curl --fail http://localhost:5232 || 
 VOLUME /config /data
 EXPOSE 5232
 
-COPY --from=docker.io/tomsquest/docker-radicale:latest
- /usr/local/bin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY --from=docker.io/tomsquest/docker-radicale:latest /usr/local/bin/docker-entrypoint.sh /usr/local/bin/
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["/venv/bin/radicale", "--config", "/config/config"]
